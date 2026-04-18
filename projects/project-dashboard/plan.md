@@ -1,7 +1,7 @@
 # Project Dashboard
 
 **Status:** 🟢 Active  
-**Tags:** #web #dashboard #tooling  
+**Tags:** #web #dashboard #nextjs #tooling  
 **Started:** 2026-04-18  
 **Last Updated:** 2026-04-18  
 
@@ -9,26 +9,66 @@
 
 ## Goal
 
-Build a web dashboard that reads project folders from this planning repo, displays project statuses visually, and lets you update a project's status — which writes back to the markdown files and commits to the git repo. Makes managing projects faster without manually editing markdown every time.
+Build a local Next.js web dashboard that reads project folders from the `project_plans` repo, displays all projects as cards with status badges, and lets you change a project's status via a dropdown — which writes back to `plan.md`, updates `DASHBOARD.md`, and auto-commits to git. Replaces manual markdown editing for day-to-day status management.
+
+---
+
+## Folder Structure
+
+```
+project-dashboard/
+├── .env.local                          ← PLANS_REPO_PATH=/workspaces/project_plans
+├── next.config.ts                      ← serverExternalPackages: ['simple-git']
+├── package.json
+├── tailwind.config.ts
+├── tsconfig.json
+└── src/
+    ├── app/
+    │   ├── layout.tsx                  ← root layout, global styles
+    │   ├── page.tsx                    ← main page, renders ProjectGrid
+    │   ├── globals.css                 ← Tailwind base + status badge colors
+    │   └── api/
+    │       ├── projects/
+    │       │   └── route.ts            ← GET: returns all parsed projects
+    │       └── projects/[slug]/
+    │           └── status/
+    │               └── route.ts        ← PATCH: update status + git commit
+    ├── lib/
+    │   ├── config.ts                   ← resolves PLANS_REPO_PATH to absolute path
+    │   ├── markdown.ts                 ← parse/write bold-field metadata from plan.md
+    │   ├── dashboard.ts                ← read/write DASHBOARD.md table + stats block
+    │   └── git.ts                      ← simple-git wrapper: stage 2 files + commit
+    ├── types/
+    │   └── project.ts                  ← Project, Status, ProjectMeta interfaces
+    └── components/
+        ├── ProjectGrid.tsx             ← grid of cards, holds state, calls API
+        ├── ProjectCard.tsx             ← card: name, description, dates, status
+        ├── StatusBadge.tsx             ← colored pill badge, opens dropdown on click
+        └── StatusDropdown.tsx          ← 5-option menu, calls PATCH on select
+```
 
 ---
 
 ## Tasks
 
 ### To Do
-- [ ] Decide tech stack (frontend-only static vs. lightweight backend)
-- [ ] Design the UI layout — project cards with status badges
-- [ ] Parse project plan markdown files to extract status/metadata
-- [ ] Build status-update flow (click to change → writes to file → git commit)
-- [ ] Sync DASHBOARD.md automatically when status changes
-- [ ] Set up in the coding repo (or as a standalone repo)
-- [ ] Wire up submodule so dashboard reads from project_plans
+- [ ] Scaffold with `create-next-app` + install `simple-git`
+- [ ] Write `src/lib/config.ts` — resolve `PLANS_REPO_PATH`
+- [ ] Write `src/lib/markdown.ts` — `parsePlanMeta()` + `writeStatusToPlan()`
+- [ ] Write `GET /api/projects` — scan `projects/` dir, return `Project[]`
+- [ ] Build read-only UI — `ProjectGrid` + `ProjectCard` + `StatusBadge`
+- [ ] Write `src/lib/dashboard.ts` — `updateDashboardRow()` + `rebuildStats()`
+- [ ] Write `src/lib/git.ts` — `commitStatusChange(slug, status)`
+- [ ] Write `PATCH /api/projects/[slug]/status` — wire all three steps
+- [ ] Build `StatusDropdown` — connect to PATCH route
+- [ ] Polish — loading skeletons, inline error states
 
 ### In Progress
 - [ ] 
 
 ### Done
 - [x] Created project plan
+- [x] Decided tech stack: Next.js + TypeScript + Tailwind + simple-git
 
 ---
 
@@ -36,49 +76,135 @@ Build a web dashboard that reads project folders from this planning repo, displa
 
 | Milestone | Target Date | Done? |
 |-----------|-------------|-------|
-| Tech stack decided + repo scaffolded | 2026-04-25 | [ ] |
-| Read-only dashboard (display only) | 2026-05-02 | [ ] |
-| Status update + git commit working | 2026-05-10 | [ ] |
-| MVP shipped | 2026-05-15 | [ ] |
+| Scaffold + lib/config.ts working | 2026-04-25 | [ ] |
+| GET /api/projects + read-only UI | 2026-05-02 | [ ] |
+| PATCH /status + git commit working | 2026-05-10 | [ ] |
+| MVP shipped (full interactive dashboard) | 2026-05-15 | [ ] |
 
 ---
 
-## Tech Stack / Tools
+## Tech Stack
 
-_To be decided. Options:_
-
-| Option | Pros | Cons |
-|--------|------|------|
-| **Node.js + Express + plain HTML** | Simple, git integration easy via `simple-git` npm package | Need to run a server |
-| **Python + Flask** | Easy file I/O, `gitpython` library, clean | Extra runtime dependency |
-| **Next.js (full-stack)** | Modern, API routes handle git ops, good UI ecosystem | More setup overhead for a small tool |
+| Package | Purpose |
+|---------|---------|
+| Next.js 14+ (App Router) | Full-stack framework — API routes + React UI |
+| TypeScript | Type safety across lib, routes, components |
+| Tailwind CSS | Styling — status badge colors, card layout |
+| `simple-git` | Git operations from Node.js (no shell exec) |
 
 ---
 
-## Key Features (MVP)
+## API Routes
 
-1. **Project list view** — cards showing project name, status emoji, last updated date
-2. **Status change** — click a status badge → dropdown → select new status → saves to `plan.md` + updates `DASHBOARD.md`
-3. **Git auto-commit** — on status change, auto-commits the updated files with a message like `chore: update planning-dashboard status → Active`
-4. **Submodule aware** — works whether run from the planning repo or from the coding repo via submodule
+### `GET /api/projects`
+- Reads `projects/` directory, finds all `plan.md` files
+- Calls `parsePlanMeta()` on each, extracts H1 name + Goal description
+- Returns `Project[]` sorted by `lastUpdated` descending
+
+### `PATCH /api/projects/[slug]/status`
+- Body: `{ "status": "Paused" }`
+- Step 1: validate status is one of 5 allowed values
+- Step 2: `writeStatusToPlan(planPath, status)` — updates plan.md
+- Step 3: `updateDashboardRow(slug, status, today)` — updates DASHBOARD.md + Stats
+- Step 4: `commitStatusChange(slug, status)` — stages 2 files, commits
+- Returns `{ ok: true, slug, status }` on success
+
+---
+
+## Key Implementation Details
+
+### `src/lib/config.ts`
+```ts
+export const REPO_ROOT = process.env.PLANS_REPO_PATH
+  ? path.resolve(process.env.PLANS_REPO_PATH)
+  : path.resolve(process.cwd())
+
+export const PROJECTS_DIR = path.join(REPO_ROOT, 'projects')
+export const DASHBOARD_PATH = path.join(REPO_ROOT, 'DASHBOARD.md')
+```
+
+### `src/lib/markdown.ts` — key regex patterns
+```ts
+// Read status
+/^\*\*Status:\*\*\s+(.+?)\s*$/m
+
+// Write status (also normalizes pipe-separated template line on first edit)
+content.replace(/^(\*\*Status:\*\*\s+).+$/m, `$1${STATUS_MAP[status]}`)
+
+// Write last updated
+content.replace(/^(\*\*Last Updated:\*\*\s+).+$/m, `$1${today}`)
+
+// Extract project name
+/^#\s+(.+)$/m
+```
+
+### Status map
+```ts
+const STATUS_MAP = {
+  Planning:  '🔵 Planning',
+  Active:    '🟢 Active',
+  Paused:    '🟡 Paused',
+  Complete:  '✅ Complete',
+  Abandoned: '❌ Abandoned',
+}
+```
+
+### `src/lib/git.ts` — commit flow
+```ts
+// Stages exactly 2 files — never git add -A
+await git.add([`projects/${slug}/plan.md`, 'DASHBOARD.md'])
+await git.commit(`chore: update ${slug} status → ${label}`)
+// No push — local only for MVP
+```
+
+### `src/types/project.ts`
+```ts
+export type Status = 'Planning' | 'Active' | 'Paused' | 'Complete' | 'Abandoned'
+
+export interface Project {
+  slug: string        // directory name under projects/
+  name: string        // H1 from plan.md
+  description: string // first paragraph under ## Goal
+  meta: {
+    status: Status
+    tags: string[]
+    started: string       // YYYY-MM-DD
+    lastUpdated: string   // YYYY-MM-DD
+  }
+}
+```
+
+---
+
+## Component Behaviour
+
+| Component | Responsibility |
+|-----------|---------------|
+| `ProjectGrid` | Fetches projects, holds state, passes `onStatusChange` to cards |
+| `ProjectCard` | Renders name, description, dates, status badge — no internal state |
+| `StatusBadge` | Colored pill button — green/blue/yellow/gray/red by status |
+| `StatusDropdown` | Positioned menu over badge — calls `onSelect(newStatus)` on pick, closes on outside click |
+
+**Optimistic update:** `ProjectGrid` updates local state immediately on status change, reverts on API error. Error shown as inline banner on the card, auto-dismisses after 4s.
 
 ---
 
 ## Notes
 
-- Dashboard will run locally (localhost) — not a deployed service
-- All changes go through git, so history is always preserved
-- Status field format in markdown: `**Status:** 🟢 Active` — parse this line to read/write status
-- DASHBOARD.md stats block needs to be kept in sync too
+- Dashboard runs locally at `localhost:3000` — not a deployed service
+- All changes go through git — history is the audit trail, no database needed
+- Status field always written as a single value (e.g. `🟢 Active`), never the pipe-separated template format
+- `PLANS_REPO_PATH` in `.env.local` points to wherever `project_plans` lives — works both standalone and via submodule at `docs/plans/`
+- `simple-git` must be in `serverExternalPackages` in `next.config.ts` to avoid client bundle errors
 
 ---
 
 ## Resources & Links
 
-- [DASHBOARD.md](../../DASHBOARD.md) — the file this app will manage
-- [templates/project-plan.md](../../templates/project-plan.md) — format the parser needs to handle
-- `simple-git` npm: https://github.com/steveukx/git-js
-- `gitpython`: https://gitpython.readthedocs.io
+- [DASHBOARD.md](../../DASHBOARD.md) — real format the dashboard.ts parser must handle
+- [templates/project-plan.md](../../templates/project-plan.md) — pipe-separated Status line that markdown.ts must normalize
+- [simple-git docs](https://github.com/steveukx/git-js)
+- [Next.js App Router docs](https://nextjs.org/docs/app)
 
 ---
 
@@ -86,21 +212,30 @@ _To be decided. Options:_
 
 | Date | Decision | Reason |
 |------|----------|--------|
-| 2026-04-18 | Store status in markdown frontmatter-style bold fields | Keeps files human-readable without requiring YAML frontmatter parser |
-| 2026-04-18 | Auto-commit on status change | Keeps git history as the audit trail — no separate database needed |
+| 2026-04-18 | Next.js + TypeScript + Tailwind | Full-stack in one project, great UI ecosystem, easy to extend |
+| 2026-04-18 | Status stored as bold markdown fields, not YAML | Human-readable without a frontmatter parser |
+| 2026-04-18 | Auto-commit on status change, no push | Git is the audit trail; push stays manual for control |
+| 2026-04-18 | Stage exactly 2 files per commit | Prevents accidental commits of unrelated changes |
+| 2026-04-18 | No third-party dropdown or date library | Format is simple enough for regex + native Date |
 
 ---
 
 ## Risks
 
-- Parsing markdown status line could break if format drifts across files — need a strict convention
-- Git conflicts if dashboard and manual edits happen simultaneously — low risk for solo use
-- Auto-commit could be annoying if it creates too many tiny commits — may batch changes
+- Markdown status regex breaks if bold-field format drifts across files — enforce convention strictly
+- Git commit fails if `user.email`/`user.name` not configured in the plans repo — must check on setup
+- Optimistic UI update could show stale state if git commit silently fails — handle error path carefully
 
 ---
 
 ## Blockers / Open Questions
 
-- Which tech stack? (decide before coding)
-- Should status changes require a confirmation step before committing?
-- Run as a CLI tool or always-on local server?
+- None — ready to build
+
+---
+
+## AI Agents
+
+| Agent | Role | Instruction File | Status |
+|-------|------|-----------------|--------|
+| | | | |
