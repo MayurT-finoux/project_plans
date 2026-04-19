@@ -11,6 +11,7 @@ A personal planning repo for tracking projects and ideas.
 | Project | Description | Status | Started |
 |---------|-------------|--------|---------|
 | [project-dashboard](projects/project-dashboard/plan.md) | Web dashboard to track and manage projects from this repo | 🟢 Active | 2026-04-18 |
+| [ai-assistant](projects/ai-assistant/plan.md) | AI assistant tool for summarizing and managing project plans in this repo | 🟢 Active | 2026-04-19 |
 
 ---
 
