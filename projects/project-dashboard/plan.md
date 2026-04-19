@@ -1,9 +1,9 @@
 # Project Dashboard
 
 **Status:** 🟢 Active  
-**Tags:** #web #dashboard #nextjs #tooling  
+**Tags:** #web #dashboard #nextjs #vercel #tooling  
 **Started:** 2026-04-18  
-**Last Updated:** 2026-04-18  
+**Last Updated:** 2026-04-19  
 
 ---
 
@@ -90,7 +90,8 @@ project-dashboard/
 | Next.js 14+ (App Router) | Full-stack framework — API routes + React UI |
 | TypeScript | Type safety across lib, routes, components |
 | Tailwind CSS | Styling — status badge colors, card layout |
-| `simple-git` | Git operations from Node.js (no shell exec) |
+| `@octokit/rest` | GitHub API — read/write files, auto-commits (replaces simple-git) |
+| `next-auth` | GitHub OAuth — only repo owner can access the deployed app |
 
 ---
 
@@ -113,29 +114,33 @@ project-dashboard/
 
 ## Key Implementation Details
 
-### `src/lib/config.ts`
-```ts
-export const REPO_ROOT = process.env.PLANS_REPO_PATH
-  ? path.resolve(process.env.PLANS_REPO_PATH)
-  : path.resolve(process.cwd())
+### Architecture: GitHub API (not simple-git)
+Vercel serverless functions have a read-only filesystem. All reads/writes use **`@octokit/rest`** — every write auto-commits to the repo. No local git, no submodule, works on Vercel and localhost.
 
-export const PROJECTS_DIR = path.join(REPO_ROOT, 'projects')
-export const DASHBOARD_PATH = path.join(REPO_ROOT, 'DASHBOARD.md')
+```
+GITHUB_TOKEN=ghp_...        ← PAT with repo scope
+GITHUB_OWNER=MayurT-finoux
+GITHUB_REPO=project_plans
+NEXTAUTH_SECRET=...          ← for GitHub OAuth
 ```
 
-### `src/lib/markdown.ts` — key regex patterns
+### `src/lib/github.ts` — GitHub API wrapper
 ```ts
-// Read status
-/^\*\*Status:\*\*\s+(.+?)\s*$/m
+getFile(path)                         → { content: string, sha: string }
+writeFile(path, content, message, sha?) → creates commit in project_plans
+listDir(path)                         → [{ name, type, path }]
+```
 
-// Write status (also normalizes pipe-separated template line on first edit)
+### `src/lib/markdown.ts` — pure functions (no file I/O)
+```ts
+// Read status (handles pipe-separated template line too)
+/^\*\*Status:\*\*\s+(.+?)(?:\s*\|.*)?$/m
+
+// Write status
 content.replace(/^(\*\*Status:\*\*\s+).+$/m, `$1${STATUS_MAP[status]}`)
 
 // Write last updated
 content.replace(/^(\*\*Last Updated:\*\*\s+).+$/m, `$1${today}`)
-
-// Extract project name
-/^#\s+(.+)$/m
 ```
 
 ### Status map
@@ -147,14 +152,6 @@ const STATUS_MAP = {
   Complete:  '✅ Complete',
   Abandoned: '❌ Abandoned',
 }
-```
-
-### `src/lib/git.ts` — commit flow
-```ts
-// Stages exactly 2 files — never git add -A
-await git.add([`projects/${slug}/plan.md`, 'DASHBOARD.md'])
-await git.commit(`chore: update ${slug} status → ${label}`)
-// No push — local only for MVP
 ```
 
 ### `src/types/project.ts`

@@ -1,6 +1,6 @@
 ---
 name: Project Context
-description: Overview of the project-dashboard app — what it does, what repo it reads, file formats, and constraints
+description: Overview of the project-dashboard app — architecture, GitHub API approach, file formats, constraints
 type: reference
 ---
 
@@ -8,58 +8,68 @@ type: reference
 
 ## What This App Does
 
-A local Next.js web dashboard that manages projects stored in the `project_plans` git repo. It:
+A Next.js web dashboard (deployed on Vercel) that manages projects stored in the `project_plans` GitHub repo. It:
 1. **Displays** all projects as cards (status, tags, description, dates)
-2. **Updates status** via a dropdown — writes back to markdown files and auto-commits to git
-3. **Creates new projects** via a form modal — generates folder + plan.md from template, updates DASHBOARD.md and README.md, auto-commits to git
+2. **Updates status** via a dropdown — writes directly to GitHub via API, auto-commits
+3. **Creates new projects** via a form modal — creates folder + plan.md + updates DASHBOARD.md + README.md, auto-commits
+4. **Protected** via GitHub OAuth — only the repo owner can log in and make changes
 
-Runs locally at `localhost:3000`. Not deployed. No database — git is the audit trail.
-
----
-
-## How project_plans Is Accessed
-
-The `project_plans` repo is added as a git submodule in this app repo at:
-```
-docs/plans/
-```
-
-So the full path to project files from the app root is:
-```
-docs/plans/projects/{slug}/plan.md
-docs/plans/DASHBOARD.md
-docs/plans/README.md
-docs/plans/templates/project-plan.md
-```
-
-The `.env.local` in the app root must contain:
-```
-PLANS_REPO_PATH=./docs/plans
-```
-
-The `lib/config.ts` module resolves this to an absolute path at runtime.
+Deployed on Vercel. No database. GitHub is the single source of truth and audit trail.
 
 ---
 
-## project_plans Folder Structure
+## Architecture: GitHub API (Not Submodule / simple-git)
+
+**Do NOT use `simple-git` or `fs.writeFileSync`.** Vercel's serverless functions have a read-only ephemeral filesystem. The app must use the **GitHub REST API (Octokit)** to read and write all files.
+
+This also means **no submodule is needed** in the app repo. The app talks directly to the `project_plans` repo via API.
+
+### How it works
+```
+User action (status change / new project)
+  → Next.js API route
+    → GitHub API: GET file content + sha
+    → modify markdown string in memory
+    → GitHub API: PUT file (content + sha + commit message)
+      → file updated + commit created in project_plans repo automatically
+  → return success to UI
+```
+
+Every GitHub API write creates a commit in `project_plans` — no separate git push needed, works from Vercel or localhost.
+
+### Required environment variables
+```
+GITHUB_TOKEN=ghp_...            ← Personal Access Token with repo scope
+GITHUB_OWNER=MayurT-finoux
+GITHUB_REPO=project_plans
+```
+
+For Vercel: add these in the Vercel project dashboard → Settings → Environment Variables.
+For local dev: add to `.env.local` in the app root.
+
+The PAT must have `repo` scope (read + write). When the repo goes private, nothing changes in the app — the token handles auth.
+
+---
+
+## project_plans Repo Structure
 
 ```
-docs/plans/                         ← REPO_ROOT (resolved from PLANS_REPO_PATH)
+project_plans/                       ← GitHub repo: MayurT-finoux/project_plans
 ├── projects/
 │   └── {slug}/
-│       ├── plan.md                 ← project metadata + planning doc
-│       └── AI_Instructions/        ← agent instruction files (like this one)
+│       ├── plan.md                  ← project metadata + planning doc
+│       └── AI_Instructions/         ← agent instruction files
 ├── templates/
-│   └── project-plan.md             ← template used when creating new projects
-├── DASHBOARD.md                    ← status table for all projects
-└── README.md                       ← project index table
+│   └── project-plan.md              ← template for new projects
+├── DASHBOARD.md                     ← status table for all projects
+└── README.md                        ← project index table
 ```
 
 ---
 
 ## Markdown File Formats
 
-### `plan.md` — Bold-field metadata at the top
+### `plan.md` — Bold-field metadata at top
 
 ```markdown
 # Project Name
@@ -73,25 +83,21 @@ docs/plans/                         ← REPO_ROOT (resolved from PLANS_REPO_PATH
 
 ## Goal
 
-Description of what the project does and what "done" looks like.
-
----
-... (rest of planning doc)
+Description of what the project does and "done" looks like.
 ```
 
-**Important:** The template file has a pipe-separated Status line:
-```
-**Status:** 🔵 Planning | 🟢 Active | 🟡 Paused | ✅ Complete | ❌ Abandoned
-```
-When writing status for the first time, this entire pipe-separated value must be replaced with the single chosen status string.
-
-**Status values and their display strings:**
+**Status values:**
 ```
 Planning  → "🔵 Planning"
 Active    → "🟢 Active"
 Paused    → "🟡 Paused"
 Complete  → "✅ Complete"
 Abandoned → "❌ Abandoned"
+```
+
+The template has a pipe-separated Status line — always replace the full value with the single chosen status on first write:
+```
+**Status:** 🔵 Planning | 🟢 Active | 🟡 Paused | ✅ Complete | ❌ Abandoned
 ```
 
 ### `DASHBOARD.md` — All Projects table
@@ -101,7 +107,7 @@ Abandoned → "❌ Abandoned"
 
 | Status | Project | Description | Started | Last Updated |
 |--------|---------|-------------|---------|--------------|
-| 🟢 | [project-dashboard](projects/project-dashboard/plan.md) | Web dashboard to track projects | 2026-04-18 | 2026-04-18 |
+| 🟢 | [project-dashboard](projects/project-dashboard/plan.md) | Web dashboard | 2026-04-18 | 2026-04-18 |
 
 ---
 
@@ -120,30 +126,73 @@ Abandoned → "❌ Abandoned"
 
 | Project | Description | Status | Started |
 |---------|-------------|--------|---------|
-| [project-dashboard](projects/project-dashboard/plan.md) | Web dashboard to track projects | 🟢 Active | 2026-04-18 |
+| [project-dashboard](projects/project-dashboard/plan.md) | Web dashboard | 🟢 Active | 2026-04-18 |
 ```
 
 ---
 
-## Git Rules
+## GitHub API File Operations
 
-- The `simple-git` instance must be initialized with `REPO_ROOT` (the plans repo path), NOT `process.cwd()` (the app directory)
-- `commitStatusChange(slug, status)`: stage only `projects/{slug}/plan.md` and `DASHBOARD.md`
-- `commitNewProject(slug, name)`: stage `projects/{slug}/`, `DASHBOARD.md`, `README.md`
-- **Never** use `git add -A` or `git add .`
-- **No push** for MVP — all commits are local only
-- Commit message format:
-  - Status change: `chore: update {slug} status → {label}`
-  - New project: `feat: add project {name}`
+### Reading a file
+```ts
+const { data } = await octokit.repos.getContent({
+  owner: GITHUB_OWNER, repo: GITHUB_REPO, path
+})
+// data.content is base64 encoded, data.sha is needed for updates
+const content = Buffer.from(data.content, 'base64').toString('utf8')
+```
+
+### Writing / updating a file
+```ts
+await octokit.repos.createOrUpdateFileContents({
+  owner: GITHUB_OWNER, repo: GITHUB_REPO,
+  path,
+  message: 'chore: update status',
+  content: Buffer.from(newContent).toString('base64'),
+  sha: existingSha,   // required for updates, omit for new files
+})
+```
+
+### Listing a directory
+```ts
+const { data } = await octokit.repos.getContent({
+  owner: GITHUB_OWNER, repo: GITHUB_REPO, path: 'projects'
+})
+// data is an array of { name, type, path, sha } when path is a directory
+```
+
+### Creating a new file (no sha needed)
+```ts
+await octokit.repos.createOrUpdateFileContents({
+  owner: GITHUB_OWNER, repo: GITHUB_REPO,
+  path: `projects/${slug}/plan.md`,
+  message: `feat: add project ${name}`,
+  content: Buffer.from(planContent).toString('base64'),
+  // no sha field = create new file
+})
+```
 
 ---
 
 ## Key Constraints
 
-- All file I/O uses Node.js `fs` module — server-side only (API routes + lib)
-- `simple-git` must be in `serverExternalPackages` in `next.config.ts` to avoid client bundle errors
-- No YAML frontmatter — metadata uses bold-field markdown format (`**Key:** Value`)
-- No third-party markdown parser needed — regex is sufficient for the simple bold-field format
-- No date library — use `new Date().toISOString().slice(0, 10)` for YYYY-MM-DD
-- TypeScript throughout
-- Tailwind CSS for styling
+- All GitHub API calls are server-side only (API routes + lib) — never in client components
+- The `sha` must be fetched fresh before every update to prevent overwrite conflicts
+- Batch updates (e.g. new project creates 3 files) should use sequential API calls — GitHub doesn't support batch commits via REST API
+- Use `@octokit/rest` package — not `@octokit/core` directly
+- Authentication: use NextAuth.js with GitHub provider for deployed app, token-based for API routes
+- No `simple-git`, no `fs.writeFileSync`, no `PLANS_REPO_PATH`
+
+---
+
+## Planned Improvements (Phase 2)
+
+These are not MVP but should be documented and planned for:
+
+1. **Progress bars** — parse `- [x]` and `- [ ]` checkboxes from plan.md tasks, show completion % on each card
+2. **Project detail page** — `/projects/[slug]` route, renders full plan.md as HTML, inline task editing
+3. **Filter/search** — filter cards by status or tag
+4. **Multiple templates** — choose project type (Web App, Research, Learning) when creating a project
+5. **Public share links** — read-only project view without auth, shareable URL
+6. **GitHub Actions trigger** — on status → Complete, trigger a workflow via `workflow_dispatch` API
+7. **Webhook sync** — GitHub webhook → POST to `/api/webhook` → re-fetch projects in UI (for manual repo edits to reflect in dashboard)
