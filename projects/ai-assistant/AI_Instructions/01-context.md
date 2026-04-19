@@ -1,14 +1,14 @@
 ---
 name: Project Context
-description: Overview of the project-dashboard app — architecture, GitHub API approach, file formats, constraints
+description: Overview of the ai-assistant app — architecture, GitHub API approach, file formats, constraints
 type: reference
 ---
 
-# Project Dashboard — Agent Context
+# AI Assistant — Agent Context
 
 ## What This App Does
 
-A Next.js web dashboard (deployed on Vercel) that manages projects stored in the `project_plans` GitHub repo. It:
+A Next.js app (deployed on Vercel) that provides an AI assistant for projects stored in the `project_plans` GitHub repo. It:
 1. **Displays** all projects as cards (status, tags, description, dates)
 2. **Updates status** via a dropdown — writes directly to GitHub via API, auto-commits
 3. **Creates new projects** via a form modal — creates folder + plan.md + updates DASHBOARD.md + README.md, auto-commits

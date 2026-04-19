@@ -1,6 +1,6 @@
-# Figma Design Prompt — Project Dashboard
+# Figma Design Prompt — AI Assistant
 
-**Project:** project-dashboard  
+**Project:** ai-assistant  
 **Created:** 2026-04-19  
 **Type:** UI Design Specification for Figma  
 
@@ -8,7 +8,7 @@
 
 ## Overview
 
-Design a clean, minimal web dashboard for a personal project tracker. The app reads projects from a GitHub repo and lets the user view and manage project statuses. It runs at `localhost:3000` (also deployable on Vercel). Single-user, no multi-tenant complexity.
+Design a clean, minimal interface for an AI assistant that helps manage project plans. The app reads projects from a GitHub repo and lets the user view, summarize, and manage project statuses. It runs at `localhost:3000` (also deployable on Vercel). Single-user, no multi-tenant complexity.
 
 ---
 
@@ -59,7 +59,7 @@ Design a clean, minimal web dashboard for a personal project tracker. The app re
 - Project card grid below stats
 
 **Navbar:**
-- Left: App name `Project Dashboard` (bold, `text-primary`)
+- Left: App name `AI Assistant` (bold, `text-primary`)
 - Right: `+ Add Project` button (primary filled button, dark background `#111827`, white text)
 - Height: `64px`, white background, bottom border `1px solid #E5E7EB`
 

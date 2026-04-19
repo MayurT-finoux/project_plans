@@ -1,6 +1,6 @@
 ---
 name: Build Agent Instructions
-description: Complete step-by-step instructions for building the project-dashboard Next.js app with GitHub API
+description: Complete step-by-step instructions for building the ai-assistant Next.js app with GitHub API
 type: reference
 ---
 
@@ -40,7 +40,7 @@ NEXTAUTH_URL=http://localhost:3000
 
 1. Go to GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
 2. Click **"Generate new token (classic)"**
-3. Set a name (e.g. `project-dashboard`)
+3. Set a name (e.g. `ai-assistant`)
 4. Set expiration as needed
 5. Check the **`repo`** scope (top-level checkbox — grants full read/write to all repos)
 6. Click **"Generate token"** and copy it immediately (shown only once)

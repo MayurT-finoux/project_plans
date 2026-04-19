@@ -1,22 +1,22 @@
-# Project Dashboard
+# AI Assistant
 
 **Status:** 🟢 Active  
-**Tags:** #web #dashboard #nextjs #vercel #tooling  
-**Started:** 2026-04-18  
+**Tags:** #ai #assistant #nextjs #tooling  
+**Started:** 2026-04-19  
 **Last Updated:** 2026-04-19  
 
 ---
 
 ## Goal
 
-Build a local Next.js web dashboard that reads project folders from the `project_plans` repo, displays all projects as cards with status badges, and lets you change a project's status via a dropdown — which writes back to `plan.md`, updates `DASHBOARD.md`, and auto-commits to git. Replaces manual markdown editing for day-to-day status management.
+Build a local AI assistant tool that reads project folders from the `project_plans` repo, summarizes project plans, and helps manage project metadata through a developer-focused interface. It should support status updates, project summaries, and planning workflows while keeping the repo as the single source of truth.
 
 ---
 
 ## Folder Structure
 
 ```
-project-dashboard/
+ai-assistant/
 ├── .env.local                          ← PLANS_REPO_PATH=/workspaces/project_plans
 ├── next.config.ts                      ← serverExternalPackages: ['simple-git']
 ├── package.json
