@@ -36,6 +36,18 @@ NEXTAUTH_SECRET=...
 NEXTAUTH_URL=http://localhost:3000
 ```
 
+### How to create a GitHub Personal Access Token (PAT)
+
+1. Go to GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
+2. Click **"Generate new token (classic)"**
+3. Set a name (e.g. `project-dashboard`)
+4. Set expiration as needed
+5. Check the **`repo`** scope (top-level checkbox — grants full read/write to all repos)
+6. Click **"Generate token"** and copy it immediately (shown only once)
+7. Paste it as `GITHUB_TOKEN` in `.env.local`
+
+**Scope needed:** `repo` — required for reading files, writing files, and creating commits in `project_plans`.
+
 ### `next.config.ts`
 ```ts
 import type { NextConfig } from 'next'
