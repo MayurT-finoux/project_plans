@@ -12,7 +12,8 @@ Quick status overview of all projects. Update this whenever a project changes st
 | 🟡 | Paused — on hold temporarily |
 | 🔵 | Planning — not started yet |
 | ✅ | Complete |
-| ❌ | Abandoned |
+| ❌ | Scrapped |
+| 💡 | Idea |
 
 ---
 
@@ -32,4 +33,5 @@ Quick status overview of all projects. Update this whenever a project changes st
 - **Active:** 1
 - **Paused:** 1
 - **Complete:** 1
-- **Abandoned:** 0
+- **Scrapped:** 0
+- **Idea:** 0
