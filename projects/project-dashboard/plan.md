@@ -3,13 +3,15 @@
 **Status:** 🟢 Active  
 **Tags:** #web #dashboard #nextjs #vercel #tooling  
 **Started:** 2026-04-18  
-**Last Updated:** 2026-04-19  
+**Last Updated:** 2026-04-21  
 
 ---
 
 ## Goal
 
-Build a local Next.js web dashboard that reads project folders from the `project_plans` repo, displays all projects as cards with status badges, and lets you change a project's status via a dropdown — which writes back to `plan.md`, updates `DASHBOARD.md`, and auto-commits to git. Replaces manual markdown editing for day-to-day status management.
+A Vercel-deployed Next.js dashboard that is the single place to manage all projects stored in the `project_plans` GitHub repo. It displays every project as a card (status, tags, description, milestones), lets you update status via a dropdown (auto-commits to GitHub), and add new projects via a form modal (creates folder + plan.md, updates DASHBOARD.md + README.md, auto-commits).
+
+**Phase 2 (automation):** From the dashboard, create a new GitHub repo, initialize it, and launch a Codespace for it — eliminating manual repo setup entirely. Every project goes from idea → plan → repo → Codespace without leaving the dashboard.
 
 ---
 
@@ -51,24 +53,35 @@ project-dashboard/
 
 ## Tasks
 
-### To Do
-- [ ] Scaffold with `create-next-app` + install `simple-git`
-- [ ] Write `src/lib/config.ts` — resolve `PLANS_REPO_PATH`
-- [ ] Write `src/lib/markdown.ts` — `parsePlanMeta()` + `writeStatusToPlan()`
-- [ ] Write `GET /api/projects` — scan `projects/` dir, return `Project[]`
+### Phase 1 — MVP (core dashboard)
+- [ ] Scaffold with `create-next-app` + install `@octokit/rest next-auth`
+- [ ] Write `src/lib/github.ts` — `getFile`, `writeFile`, `listDir`
+- [ ] Write `src/lib/markdown.ts` — `parsePlanMeta()` + `writeStatus()`
+- [ ] Write `GET /api/projects` — list projects dir, return `Project[]`
 - [ ] Build read-only UI — `ProjectGrid` + `ProjectCard` + `StatusBadge`
 - [ ] Write `src/lib/dashboard.ts` — `updateDashboardRow()` + `rebuildStats()`
-- [ ] Write `src/lib/git.ts` — `commitStatusChange(slug, status)`
-- [ ] Write `PATCH /api/projects/[slug]/status` — wire all three steps
-- [ ] Build `StatusDropdown` — connect to PATCH route
-- [ ] Polish — loading skeletons, inline error states
+- [ ] Write `src/lib/readme.ts` — `addProjectToReadme()`
+- [ ] Write `PATCH /api/projects/[slug]/status` — update plan.md + DASHBOARD.md via GitHub API
+- [ ] Write `POST /api/projects/create` — create folder + plan.md from template, update DASHBOARD.md + README.md
+- [ ] Build `StatusDropdown` + `AddProjectModal` — connect to routes
+- [ ] Add NextAuth GitHub OAuth — protect all routes
+- [ ] Deploy to Vercel
+
+### Phase 2 — Automation
+- [ ] `POST /api/projects/[slug]/create-repo` — create GitHub repo via API (`octokit.repos.createForAuthenticatedUser`)
+- [ ] `POST /api/projects/[slug]/create-codespace` — open Codespace via GitHub API (`octokit.codespaces.createForRepo`)
+- [ ] Show "Open in Codespace" button on project card (appears after repo is created)
+- [ ] Milestone progress bar — parse `- [x]` / `- [ ]` from plan.md, show % complete on card
+- [ ] Project detail page `/projects/[slug]` — full plan.md rendered, inline task toggle
 
 ### In Progress
 - [ ] 
 
 ### Done
 - [x] Created project plan
-- [x] Decided tech stack: Next.js + TypeScript + Tailwind + simple-git
+- [x] Decided tech stack: Next.js + TypeScript + Tailwind + @octokit/rest + next-auth
+- [x] Created AI agent instruction files (`01-context.md`, `02-build-agent.md`)
+- [x] Documented GitHub API architecture (replaces simple-git/submodule approach)
 
 ---
 
@@ -76,10 +89,12 @@ project-dashboard/
 
 | Milestone | Target Date | Done? |
 |-----------|-------------|-------|
-| Scaffold + lib/config.ts working | 2026-04-25 | [ ] |
+| Scaffold + GitHub API lib working | 2026-04-25 | [ ] |
 | GET /api/projects + read-only UI | 2026-05-02 | [ ] |
-| PATCH /status + git commit working | 2026-05-10 | [ ] |
-| MVP shipped (full interactive dashboard) | 2026-05-15 | [ ] |
+| PATCH /status + POST /create working | 2026-05-10 | [ ] |
+| Phase 1 MVP — deployed on Vercel | 2026-05-15 | [ ] |
+| Phase 2 — auto create repo + Codespace | 2026-06-01 | [ ] |
+| Phase 2 — milestone progress bars + detail page | 2026-06-15 | [ ] |
 
 ---
 

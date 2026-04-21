@@ -187,12 +187,24 @@ await octokit.repos.createOrUpdateFileContents({
 
 ## Planned Improvements (Phase 2)
 
-These are not MVP but should be documented and planned for:
+These are not MVP but are planned. Build Phase 1 fully first.
 
-1. **Progress bars** — parse `- [x]` and `- [ ]` checkboxes from plan.md tasks, show completion % on each card
-2. **Project detail page** — `/projects/[slug]` route, renders full plan.md as HTML, inline task editing
-3. **Filter/search** — filter cards by status or tag
-4. **Multiple templates** — choose project type (Web App, Research, Learning) when creating a project
-5. **Public share links** — read-only project view without auth, shareable URL
-6. **GitHub Actions trigger** — on status → Complete, trigger a workflow via `workflow_dispatch` API
-7. **Webhook sync** — GitHub webhook → POST to `/api/webhook` → re-fetch projects in UI (for manual repo edits to reflect in dashboard)
+### Automation (highest priority Phase 2)
+1. **Auto-create GitHub repo** — `POST /api/projects/[slug]/create-repo`
+   - `octokit.repos.createForAuthenticatedUser({ name: slug, private: true, auto_init: true })`
+   - Store created repo URL back into plan.md as a `**Repo:**` field
+   - Show "Create Repo" button on card when no repo exists yet
+
+2. **Auto-create Codespace** — `POST /api/projects/[slug]/create-codespace`
+   - `octokit.codespaces.createForRepo({ owner, repo: slug, ref: 'main', ... })`
+   - Returns Codespace URL — show "Open in Codespace" button on card
+   - Requires `codespace` scope added to PAT
+
+### Progress & Detail
+3. **Milestone progress bars** — parse `- [x]` and `- [ ]` in plan.md Tasks section, show `X / Y tasks` + progress bar on each card
+4. **Project detail page** — `/projects/[slug]` route, renders full plan.md as HTML, inline task checkbox toggle (calls PATCH to update plan.md)
+
+### Discovery & Sync
+5. **Filter/search** — filter cards by status or tag (client-side, no new API needed)
+6. **Webhook sync** — GitHub webhook → `POST /api/webhook` → re-fetch projects in UI (keeps dashboard in sync when plan.md is edited directly in GitHub)
+7. **GitHub Actions trigger** — on status → Complete, trigger `workflow_dispatch` event via API
