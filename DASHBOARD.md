@@ -20,13 +20,13 @@ Quick status overview of all projects. Update this whenever a project changes st
 
 | Status | Project | Description | Started | Last Updated |
 |--------|---------|-------------|---------|--------------|
-| ❌ | [project-dashboard](projects/project-dashboard/plan.md) | Web dashboard to track and manage projects from this repo | 2026-04-18 | 2026-04-21 |
+| 🟢 | [project-dashboard](projects/project-dashboard/plan.md) | Web dashboard to track and manage projects from this repo | 2026-04-18 | 2026-04-21 |
 
 ---
 
 ## Stats
 
-- **Active:** 0
+- **Active:** 1
 - **Paused:** 0
 - **Complete:** 0
-- **Abandoned:** 1
+- **Abandoned:** 0
