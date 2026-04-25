@@ -21,7 +21,7 @@ Quick status overview of all projects. Update this whenever a project changes st
 
 | Status | Project | Description | Started | Last Updated |
 |--------|---------|-------------|---------|--------------|
-| 🟡 | [project-dashboard](projects/project-dashboard/plan.md) | Web dashboard to track and manage projects from this repo | 2026-04-18 | 2026-04-21 |
+| 🟢 | [project-dashboard](projects/project-dashboard/plan.md) | Web dashboard to track and manage projects from this repo | 2026-04-18 | 2026-04-25 |
 
 | ✅ | [test-project](projects/test-project/plan.md) | This is a test project | 2026-04-21 | 2026-04-21 |
 | 🟢 | [my-test-app](projects/my-test-app/plan.md) | Testing the create project feature | 2026-04-21 | 2026-04-21 |
@@ -30,8 +30,9 @@ Quick status overview of all projects. Update this whenever a project changes st
 
 ## Stats
 
-- **Active:** 1
-- **Paused:** 1
+- **Active:** 2
+- **Paused:** 0
+- **Planning:** 1
 - **Complete:** 1
 - **Scrapped:** 0
 - **Idea:** 0
