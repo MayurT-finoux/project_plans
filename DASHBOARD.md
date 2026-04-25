@@ -27,6 +27,7 @@ Quick status overview of all projects. Update this whenever a project changes st
 | 🟢 | [my-test-app](projects/my-test-app/plan.md) | Testing the create project feature | 2026-04-21 | 2026-04-21 |
 | 🔵 | [ai-assistant](projects/ai-assistant/plan.md) | daily life ai agent | 2026-04-21 | 2026-04-21 |
 | 💡 | [test-idea](projects/test-idea/plan.md) | a test idea | 2026-04-25 | 2026-04-25 |
+| 💡 | [delete-me](projects/delete-me/plan.md) | cleanup test | 2026-04-25 | 2026-04-25 |
 ---
 
 ## Stats
@@ -36,4 +37,4 @@ Quick status overview of all projects. Update this whenever a project changes st
 - **Planning:** 1
 - **Complete:** 1
 - **Scrapped:** 0
-- **Idea:** 0
+- **Idea:** 1
